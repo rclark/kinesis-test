@@ -1,0 +1,49 @@
+{
+  "name": "kinesis-test",
+  "version": "0.0.1",
+  "description": "Create and destroy Kinesis and Kinesalite streams for use in tape tests",
+  "main": "index.js",
+  "scripts": {
+    "pretest": "jshint index.js test && jscs index.js test",
+    "test": "tape test/*.test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rclark/kinesis-test"
+  },
+  "keywords": [
+    "AWS",
+    "Kinesis",
+    "kinesalite",
+    "test",
+    "tape"
+  ],
+  "author": "Ryan Clark",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/rclark/kinesis-test/issues"
+  },
+  "homepage": "https://github.com/rclark/kinesis-test",
+  "jshint": {
+    "node": true,
+    "globalstrict": false,
+    "undef": true,
+    "unused": true,
+    "noarg": true
+  },
+  "jscsConfig": {
+    "preset": "airbnb"
+  },
+  "devDependencies": {
+    "jscs": "^1.12.0",
+    "jshint": "^2.6.3"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.1.20",
+    "kinesalite": "^1.4.1",
+    "kinesis-readable": "0.0.2",
+    "queue-async": "^1.0.7",
+    "tape": "^3.5.0",
+    "underscore": "^1.8.2"
+  }
+}
