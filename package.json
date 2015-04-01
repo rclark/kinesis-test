@@ -1,6 +1,6 @@
 {
   "name": "kinesis-test",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Create and destroy Kinesis and Kinesalite streams for use in tape tests",
   "main": "index.js",
   "scripts": {
@@ -41,7 +41,7 @@
   "dependencies": {
     "aws-sdk": "^2.1.20",
     "kinesalite": "^1.4.1",
-    "kinesis-readable": "0.0.2",
+    "kinesis-readable": "0.0.3",
     "queue-async": "^1.0.7",
     "tape": "^3.5.0",
     "underscore": "^1.8.2"
