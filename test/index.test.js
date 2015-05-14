@@ -3,8 +3,8 @@ var crypto = require('crypto');
 
 var project = crypto.randomBytes(4).toString('hex');
 
-var mocked = require('..')(project, 1);
-var live = require('..')(project, 1, 'us-east-1');
+var mocked = require('..')(test, project, 1);
+var live = require('..')(test, project, 1, 'us-east-1');
 
 test('sets streamName', function(assert) {
   var re = new RegExp('test-' + project + '-[a-zA-Z0-9]{8}');
@@ -34,7 +34,8 @@ mocked.load([{ Data: 'hello', PartitionKey: 'a' }]);
 test('mocked fixture load', function(assert) {
   assert.plan(3);
 
-  mocked.shards[0].on('data', function(item) {
+  mocked.shards[0].on('data', function(items) {
+    var item = items[0];
     assert.deepEqual(item.Data, new Buffer('hello'), 'expected data');
     assert.equal(item.PartitionKey, 'a', 'expected partition key');
     assert.ok(item.SequenceNumber, 'has sequence number');
@@ -77,7 +78,8 @@ mocked.test('mocked test with fixtures', [{ Data: 'hello', PartitionKey: 'a' }],
     if (err) throw err;
     assert.deepEqual(data.StreamNames, [mocked.streamName], 'creates the stream');
     assert.equal(mocked.shards.length, 1, 'creates a readable stream for the shard');
-    mocked.shards[0].on('data', function(item) {
+    mocked.shards[0].on('data', function(items) {
+      var item = items[0];
       assert.deepEqual(item.Data, new Buffer('hello'), 'expected data');
       assert.equal(item.PartitionKey, 'a', 'expected partition key');
       assert.ok(item.SequenceNumber, 'has sequence number');
@@ -117,7 +119,8 @@ live.load([{ Data: 'hello', PartitionKey: 'a' }]);
 test('live fixture load', function(assert) {
   assert.plan(3);
 
-  live.shards[0].on('data', function(item) {
+  live.shards[0].on('data', function(items) {
+    var item = items[0];
     assert.deepEqual(item.Data, new Buffer('hello'), 'expected data');
     assert.equal(item.PartitionKey, 'a', 'expected partition key');
     assert.ok(item.SequenceNumber, 'has sequence number');
@@ -160,7 +163,8 @@ live.test('live test with fixtures', [{ Data: 'hello', PartitionKey: 'a' }], fun
     if (err) throw err;
     assert.ok(data.StreamNames.indexOf(live.streamName), 'creates the stream');
     assert.equal(live.shards.length, 1, 'creates a readable stream for the shard');
-    live.shards[0].on('data', function(item) {
+    live.shards[0].on('data', function(items) {
+      var item = items[0];
       assert.deepEqual(item.Data, new Buffer('hello'), 'expected data');
       assert.equal(item.PartitionKey, 'a', 'expected partition key');
       assert.ok(item.SequenceNumber, 'has sequence number');

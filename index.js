@@ -1,4 +1,3 @@
-var test = require('tape');
 var crypto = require('crypto');
 var AWS = require('aws-sdk');
 var _ = require('underscore');
@@ -8,7 +7,7 @@ var kinesalite = require('kinesalite')({
 });
 var queue = require('queue-async');
 
-module.exports = function(projectName, shards, region) {
+module.exports = function(test, projectName, shards, region) {
   var live = !!region;
 
   var options = live ? { region: region } : {
@@ -29,8 +28,8 @@ module.exports = function(projectName, shards, region) {
   ].join('-');
 
   var Readable = require('kinesis-readable')(_({
-    streamName: kinesis.streamName,
-    streamRegion: options.region
+    name: kinesis.streamName,
+    region: options.region
   }).extend(options));
 
   var streamRunning = false;

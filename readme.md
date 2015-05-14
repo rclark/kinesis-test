@@ -5,7 +5,8 @@ Create and destroy Kinesis and Kinesalite streams for use in tape tests
 ## Usage
 
 ```js
-var kinesis = require('kinesis-test')('my-project', 1, 'us-east-1');
+var tape = require('tape');
+var kinesis = require('kinesis-test')(tape, 'my-project', 1, 'us-east-1');
 
 kinesis.test('my test', function(assert) {
   // creates a stream with 1 shard for you
@@ -21,9 +22,9 @@ kinesis.test('another test', function(assert) {
 
 ## API
 
-**var kinesis = require('kinesis-test')(projectName, shards, [region])**
+**var kinesis = require('kinesis-test')(tape, projectName, shards, [region])**
 
-Provide an arbitrary `projectName` (used in your stream's name) and number of `shards`. If you specify a `region`, then real-life Kinesis used. If not, then it will work locally using [kinesalite](https://github.com/mhart/kinesalite).
+Provide your own `tape` object, then provide an arbitrary `projectName` (used in your stream's name) and number of `shards`. If you specify a `region`, then real-life Kinesis used. If not, then it will work locally using [kinesalite](https://github.com/mhart/kinesalite).
 
 **kinesis.streamName**
 
