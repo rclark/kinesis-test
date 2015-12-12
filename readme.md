@@ -40,7 +40,7 @@ Creates a kinesis stream for you to test against.
 
 **kinesis.shards**
 
-Once your stream is created, `shards` will provide you an array of [kinesis-readable](https://github.com/rclark/kinesis-readable) streams, one for each shard.
+Once your stream is created, `shards` will provide you an array of functions, one for each shard. Pass an `options` object to this function in order to create a [kinesis-readable](https://github.com/rclark/kinesis-readable) streams.
 
 **kinesis.load(fixtures)**
 

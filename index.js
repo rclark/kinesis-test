@@ -2,7 +2,8 @@ var crypto = require('crypto');
 var AWS = require('aws-sdk');
 var _ = require('underscore');
 var kinesalite = require('kinesalite')({
-  createStreamMs: 0,
+  createStreamMs: 1,
+  deleteStreaMs: 1,
   ssl: false
 });
 var queue = require('queue-async');
@@ -11,15 +12,16 @@ module.exports = function(test, projectName, shards, region) {
   var live = !!region;
 
   var options = live ? { region: region } : {
-    region: 'fake',
-    accessKeyId: 'fake',
-    secretAccessKey: 'fake',
+    region: '-',
+    accessKeyId: '-',
+    secretAccessKey: '-',
     endpoint: 'http://localhost:7654'
   };
 
   var kinesis = {};
 
-  kinesis.kinesis = new AWS.Kinesis(options);
+  var client = new AWS.Kinesis(options);
+  kinesis.kinesis = client;
 
   kinesis.streamName = [
     'test',
@@ -27,10 +29,8 @@ module.exports = function(test, projectName, shards, region) {
     crypto.randomBytes(4).toString('hex')
   ].join('-');
 
-  var Readable = require('kinesis-readable')(_({
-    name: kinesis.streamName,
-    region: options.region
-  }).extend(options));
+  var Readable = require('kinesis-readable').bind(null, client, kinesis.streamName);
+  var readables = [];
 
   var streamRunning = false;
 
@@ -41,17 +41,26 @@ module.exports = function(test, projectName, shards, region) {
     function ready(err) {
       if (err) throw err;
 
-      check(kinesis.kinesis, kinesis.streamName, function(err, status) {
+      check(client, kinesis.streamName, function(err, status) {
         if (err) throw err;
         if (status !== 'ACTIVE') return setTimeout(ready, 1000);
 
         streamRunning = true;
 
-        shardids(kinesis.kinesis, kinesis.streamName, function(err, shardids) {
+        shardids(client, kinesis.streamName, function(err, shardids) {
           if (err) throw err;
 
           kinesis.shards = shardids.map(function(id) {
-            return new Readable(id);
+            return function(options) {
+              var readable = Readable(_({ shardId: id }).extend(options));
+              var i = readables.push(readable) - 1;
+
+              readable.on('end', function() {
+                readables.splice(i, 1);
+              });
+
+              return readable;
+            };
           });
 
           assert.end();
@@ -59,11 +68,11 @@ module.exports = function(test, projectName, shards, region) {
       });
     }
 
-    if (live) return create(kinesis.kinesis, kinesis.streamName, shards, ready);
+    if (live) return create(client, kinesis.streamName, shards, ready);
 
     kinesalite.listen(7654, function(err) {
       if (err) throw err;
-      create(kinesis.kinesis, kinesis.streamName, shards, ready);
+      create(client, kinesis.streamName, shards, ready);
     });
   }
 
@@ -84,7 +93,7 @@ module.exports = function(test, projectName, shards, region) {
         if (err) console.log('delete errored');
         if (err) throw err;
 
-        check(kinesis.kinesis, kinesis.streamName, function(err, status) {
+        check(client, kinesis.streamName, function(err, status) {
           if (err) throw err;
           if (status !== 'DOESNOTEXIST') return setTimeout(dead, 1000);
           streamRunning = false;
@@ -93,16 +102,16 @@ module.exports = function(test, projectName, shards, region) {
       }
 
       var q = queue();
-      kinesis.shards.forEach(function(shard) {
+      readables.forEach(function(shard) {
         q.defer(function(next) {
-          shard.close(next);
+          shard.close().on('end', next);
         });
       });
 
       q.awaitAll(function(err) {
         if (err) throw err;
         delete kinesis.shards;
-        destroy(kinesis.kinesis, kinesis.streamName, dead);
+        destroy(client, kinesis.streamName, dead);
       });
     });
   };
@@ -113,7 +122,7 @@ module.exports = function(test, projectName, shards, region) {
       else load();
 
       function load() {
-        kinesis.kinesis.putRecords({
+        client.putRecords({
           StreamName: kinesis.streamName,
           Records: fixtures
         }, function(err) {
