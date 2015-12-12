@@ -34,7 +34,7 @@ mocked.load([{ Data: 'hello', PartitionKey: 'a' }]);
 test('mocked fixture load', function(assert) {
   assert.plan(3);
 
-  mocked.shards[0].on('data', function(items) {
+  mocked.shards[0]().on('data', function(items) {
     var item = items[0];
     assert.deepEqual(item.Data, new Buffer('hello'), 'expected data');
     assert.equal(item.PartitionKey, 'a', 'expected partition key');
@@ -44,7 +44,32 @@ test('mocked fixture load', function(assert) {
 
 mocked.delete();
 
-test('mocked delete', function(assert) {
+test('mocked delete: readables were not closed explicitly', function(assert) {
+  mocked.kinesis.listStreams({}, function(err, data) {
+    if (err) throw err;
+    assert.equal(data.StreamNames.length, 0, 'deleted the stream');
+    assert.notOk(mocked.shards, 'close the streams');
+    assert.end();
+  });
+});
+
+mocked.test('exposes readable streams', [{ Data: 'hello', PartitionKey: 'a' }], function(assert) {
+  var readable = mocked.shards[0]()
+    .on('data', function(items) {
+      var item = items[0];
+      assert.deepEqual(item.Data, new Buffer('hello'), 'expected data');
+      assert.equal(item.PartitionKey, 'a', 'expected partition key');
+      assert.ok(item.SequenceNumber, 'has sequence number');
+    }).on('end', function() {
+      assert.end();
+    });
+
+  setTimeout(function() { readable.close(); }, 200);
+});
+
+mocked.delete();
+
+test('mocked delete: after readables were closed explicitly', function(assert) {
   mocked.kinesis.listStreams({}, function(err, data) {
     if (err) throw err;
     assert.equal(data.StreamNames.length, 0, 'deleted the stream');
@@ -78,7 +103,7 @@ mocked.test('mocked test with fixtures', [{ Data: 'hello', PartitionKey: 'a' }],
     if (err) throw err;
     assert.deepEqual(data.StreamNames, [mocked.streamName], 'creates the stream');
     assert.equal(mocked.shards.length, 1, 'creates a readable stream for the shard');
-    mocked.shards[0].on('data', function(items) {
+    mocked.shards[0]().on('data', function(items) {
       var item = items[0];
       assert.deepEqual(item.Data, new Buffer('hello'), 'expected data');
       assert.equal(item.PartitionKey, 'a', 'expected partition key');
